@@ -12,6 +12,7 @@
 #include "vec.h"
 #include "math.h"
 
+using namespace std;
 using namespace CSI4130;
 
 class Mesh {

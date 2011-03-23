@@ -88,6 +88,8 @@ template <class T> class vec<T,2> {
   inline T& y() { return d_comp[1]; }
   inline T x() const { return d_comp[0]; }
   inline T y() const { return d_comp[1]; }
+  inline vec<T,2>& operator+=( const vec<T,2>& _pt );
+	
   operator T* () { return d_comp; }   
   operator const T* () { return d_comp; } 
   friend std::ostream& operator<<( std::ostream& _out, const vec<T,2>& _pt) {
@@ -96,6 +98,14 @@ template <class T> class vec<T,2> {
   };
 };
 
+	
+template <class T>
+vec<T,2>& vec<T,2>::operator+=( const vec<T,2>& _pt ) {
+	for ( int i=0; i<2; ++i ) {
+		d_comp[i] += _pt.d_comp[i];
+	}
+	return *this;
+}
 
 template <class T>
 vec<T,2>::vec(const T _in[2]) {

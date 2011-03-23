@@ -19,13 +19,15 @@ GLuint elapsed = 0;
 int oldX = 0;
 int oldY = 0;
 int rotationX = 0;
-int rotationY = 30;
+int rotationY = 85;
 
 int deltaX = 0;
 int deltaY = 0;
 
-Grid grid(20, 20, 1, 1);
-Bike player1(4.0f, grid);
+Grid grid(50, 50, 1, 1);
+
+Bike player1(vec3f(4,0,4), 16.0f, grid, vec4f(1.0f,0.0f,0.0f,1.0f));
+Bike player2(vec3f(5,0,5), 16.0f, grid, vec4f(0.0f,0.0f,1.0f,1.0f));
 
 namespace CSI4130 {
 	
@@ -162,6 +164,7 @@ namespace CSI4130 {
 		GLfloat timestep = (glutGet(GLUT_ELAPSED_TIME) - elapsed) * 0.001;
 		elapsed = glutGet(GLUT_ELAPSED_TIME); 
 		player1.update(timestep);
+		player2.update(timestep);
 	}
 	/**
 	 * Idle routine - update scene
@@ -211,7 +214,7 @@ namespace CSI4130 {
 		// move camera
 		//gluLookAt( player1.d_position.x(), 1, player1.d_position.z(), 
 		//		  player1.d_position.x() + player1.d_direction.x(), 1, player1.d_position.z() + player1.d_direction.y(), 0, 1, 0.0f);
-		glPushMatrix();
+		//glPushMatrix();
 
 		
 		// Add the teapot relative
@@ -227,9 +230,10 @@ namespace CSI4130 {
 		glRotated(rotationY, 1, 0, 0);
 		glRotated(rotationX, 0, 1, 0);
 		
-		glTranslatef(-grid.getWidth() * 0.5f, -1.0f, -grid.getDepth() * 0.5f);
+		glTranslatef(-grid.getWidth() * 0.5f, -14.0f, -grid.getDepth() * 0.5f);
 		grid.draw();
 		player1.draw();
+		player2.draw();
 		// restore matrix state
 		glPopMatrix();
 		glUseProgram(0);
@@ -285,6 +289,7 @@ namespace CSI4130 {
 	{
 		switch (key) {
 			case 27:
+				
 			case 'q':
 				exit(0);
 				break;
@@ -308,6 +313,14 @@ namespace CSI4130 {
 				break;
 			case 'l':
 				glDisable(GL_LIGHTING);
+				break;
+			case 'a':
+				player2.d_nextDirection.x() = player2.d_direction.y();
+				player2.d_nextDirection.y() = -player2.d_direction.x();
+				break;
+			case 's': 
+				player2.d_nextDirection.x() = -player2.d_direction.y();
+				player2.d_nextDirection.y() = player2.d_direction.x();
 				break;
 			default:
 				break;

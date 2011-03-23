@@ -9,15 +9,12 @@
 
 #include "grid.h"
 
-Grid::Grid(GLuint rows = 10, GLuint cols = 10, GLfloat cellWidth = 1, GLfloat cellHeight = 1): d_rows(rows), d_cols(cols), d_cellWidth(cellWidth), d_cellHeight(cellHeight) {
-	d_map = new GLuint[rows * cols];
+Grid::Grid(GLuint rows = 10, GLuint cols = 10, GLfloat cellWidth = 1, GLfloat cellHeight = 1): d_rows(rows), d_cols(cols), d_cellWidth(cellWidth), d_cellHeight(cellHeight), d_map(rows * cols) {
 	d_dimensions.x() = rows * cellHeight;
 	d_dimensions.z() = cols * cellWidth;
 }
 
-Grid::~Grid() {
-	delete d_map;
-}
+Grid::~Grid() {}
 
 void Grid::init() {
 	// Generate the grid
@@ -51,6 +48,19 @@ void Grid::draw() {
 		glDrawArrays(GL_QUAD_STRIP, i * d_cols * 2, d_cols * 2);
 	}
 	glPolygonMode ( GL_FRONT_AND_BACK, GL_FILL ) ;
+}
+
+int Grid::cellType(vec2i coord) {
+	if( coord.y() > d_cols || coord.x() > d_rows || coord.x() < 0 || coord.y() < 0) {
+		return -1; // out of bounds
+	}
+	int index = coord.y() * d_cols + coord.x();
+	if (d_map[index]) {
+		return 1;
+	} else {
+		d_map[index] = 1;
+		return 0;
+	}
 }
 
 vec3f Grid::mapPosToCoords(int x, int y) {
