@@ -19,15 +19,18 @@ GLuint elapsed = 0;
 int oldX = 0;
 int oldY = 0;
 int rotationX = 0;
-int rotationY = 85;
+int rotationY = 0;
+//int rotationY = 85;
 
 int deltaX = 0;
 int deltaY = 0;
 
 Grid grid(50, 50, 1, 1);
 
-Bike player1(vec3f(4,0,4), 16.0f, grid, vec4f(1.0f,0.0f,0.0f,1.0f));
-Bike player2(vec3f(5,0,5), 16.0f, grid, vec4f(0.0f,0.0f,1.0f,1.0f));
+Bike player1(vec3f(4,0,4), 11.0f, grid, vec4f(0.8f,0.1f,0.6f,1.0f));
+Bike player2(vec3f(5,0,5), 11.0f, grid, vec4f(0.1f,0.6f,0.8f,1.0f));
+
+
 
 namespace CSI4130 {
 	
@@ -100,8 +103,19 @@ namespace CSI4130 {
 	Material g_material;
 	
 	GLuint g_lightProgram;
+	GLuint g_glowHorizontalProgram;
+	GLuint g_glowVerticalProgram;
 	GLuint g_colorProgram;
 	GLuint g_specularMaterial;
+	GLint g_glowHorizontalMap;
+	GLint g_glowVerticalMap;
+	GLuint g_glowTex;
+	GLuint fbo;
+	GLuint renderbuffer;
+	GLuint img;
+	GLuint img2;
+
+	
 	
 	void init() {
 		glClearColor (0.0, 0.0, 0.0, 0.0);
@@ -122,9 +136,89 @@ namespace CSI4130 {
 		// Set up stuff
 		grid.init();
 		
-		// Load color shaders
+		
+		glGenRenderbuffers(1, &renderbuffer);
+		glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, renderbuffer);
+		
+		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, 400, 400);
+		
+		glBindRenderbuffer(GL_RENDERBUFFER, 0);
+		
+		glGenFramebuffers(1, &fbo);
+		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+		
+		glGenTextures(1, &img);
+		glBindTexture(GL_TEXTURE_2D, img);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8,  400, 400, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+		glGenerateMipmapEXT(GL_TEXTURE_2D);
+		
+		glGenTextures(1, &img2);
+		glBindTexture(GL_TEXTURE_2D, img2);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8,  400, 400, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+		glGenerateMipmapEXT(GL_TEXTURE_2D);
+		
+		glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, img, 0);
+		glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT1_EXT, GL_TEXTURE_2D, img2, 0);
+		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, renderbuffer);
+		
+		
+		GLenum status = glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
+		if(status != GL_FRAMEBUFFER_COMPLETE_EXT)
+			cerr << "FBO not loaded!" << endl;
+		
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+				glBindTexture(GL_TEXTURE_2D, 0);
 		vector<GLuint> sHandles;
 		GLuint handle;
+		
+		
+		// Load blur shaders
+		Shader glowHorizontalSh;
+		cerr << "Loading shaders: " << endl;
+		if ( !glowHorizontalSh.load("glow.vs", GL_VERTEX_SHADER )) {
+			glowHorizontalSh.installShader( handle, GL_VERTEX_SHADER );
+			Shader::compile( handle );
+			sHandles.push_back( handle );
+		}
+		if ( !glowHorizontalSh.load("glow_horizontal.fs", GL_FRAGMENT_SHADER )) {
+			glowHorizontalSh.installShader( handle, GL_FRAGMENT_SHADER ); 
+			Shader::compile( handle );
+			sHandles.push_back( handle );
+		}
+		cerr << "No of handles: " << sHandles.size() << endl;
+		Shader::installProgram(sHandles, g_glowHorizontalProgram); 
+		// allocate a texture name
+		g_glowHorizontalMap = glGetUniformLocation(g_glowHorizontalProgram, "glowMap");
+		
+		sHandles.clear();
+		Shader glowVerticalSh;
+		if ( !glowVerticalSh.load("glow.vs", GL_VERTEX_SHADER )) {
+			glowVerticalSh.installShader( handle, GL_VERTEX_SHADER );
+			Shader::compile( handle );
+			sHandles.push_back( handle );
+		}
+		if ( !glowVerticalSh.load("glow_vertical.fs", GL_FRAGMENT_SHADER )) {
+			glowVerticalSh.installShader( handle, GL_FRAGMENT_SHADER ); 
+			Shader::compile( handle );
+			sHandles.push_back( handle );
+		}
+		cerr << "No of handles: " << sHandles.size() << endl;
+		Shader::installProgram(sHandles, g_glowVerticalProgram); 
+		// allocate a texture name
+		g_glowVerticalMap = glGetUniformLocation(g_glowVerticalProgram, "glowMap");
+		
+		
+		
+		// Load color shaders
+		sHandles.clear();
 		Shader colorSh;
 		cerr << "Loading shaders: " << endl;
 		if ( !colorSh.load("a3_color.vs", GL_VERTEX_SHADER )) {
@@ -139,7 +233,7 @@ namespace CSI4130 {
 		}
 		cerr << "No of handles: " << sHandles.size() << endl;
 		Shader::installProgram(sHandles, g_colorProgram); 
-		
+				
 		// Load light shaders
 		sHandles.clear();
 		Shader lightSh;
@@ -201,9 +295,9 @@ namespace CSI4130 {
 		GLboolean lightOn = glIsEnabled(GL_LIGHTING);
 		if ( lightOn ) {
 			// Use the light shader program
-			glUseProgram(g_lightProgram);
+			//glUseProgram(g_lightProgram);
 		} else {
-			glUseProgram(g_colorProgram);
+			//glUseProgram(g_colorProgram);
 		}
 		// Place a light source at a radius from the camera
 		glLightfv(GL_LIGHT0, GL_POSITION, 
@@ -211,9 +305,11 @@ namespace CSI4130 {
 						sin(g_lightAngle)*g_winSize.d_width, 
 						static_cast<GLfloat>( !g_light.d_pointLight ), 
 						static_cast<GLfloat>( g_light.d_pointLight ))); 
+		glRotated(rotationY, 0, 0, 1);
+		glRotated(rotationX, 0, 1, 0);
 		// move camera
-		//gluLookAt( player1.d_position.x(), 1, player1.d_position.z(), 
-		//		  player1.d_position.x() + player1.d_direction.x(), 1, player1.d_position.z() + player1.d_direction.y(), 0, 1, 0.0f);
+		gluLookAt( player1.d_position.x() -player1.d_direction.x() * 5,4, player1.d_position.z() -player1.d_direction.y() * 5, 
+				  player1.d_position.x() + player1.d_direction.x(), 1, player1.d_position.z() + player1.d_direction.y(), 0, 1, 0.0f);
 		//glPushMatrix();
 
 		
@@ -224,20 +320,77 @@ namespace CSI4130 {
 			glColor3f(0.9f, 0.9f, 0.9f);  // white
 		}
 		// Move the camera based on mouse interaction.
-		glTranslatef( 0,0,
-					 -(g_winSize.d_near+
-					   1.0f/2.0f*(g_winSize.d_far-g_winSize.d_near)));
-		glRotated(rotationY, 1, 0, 0);
-		glRotated(rotationX, 0, 1, 0);
+		//glTranslatef( 0,0,
+		//			 -(g_winSize.d_near+
+		//			   1.0f/2.0f*(g_winSize.d_far-g_winSize.d_near)));
+		//glRotated(rotationY, 1, 0, 0);
+		//glRotated(rotationX, 0, 1, 0);
 		
-		glTranslatef(-grid.getWidth() * 0.5f, -14.0f, -grid.getDepth() * 0.5f);
+		//glTranslatef(-grid.getWidth() * 0.5f, -14.0f, -grid.getDepth() * 0.5f);
+		
+		glColor3f(0.8,0.1,0.3);
+		//glutSolidTeapot(5.0);
 		grid.draw();
 		player1.draw();
 		player2.draw();
-		// restore matrix state
+		
+		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+		glDrawBuffer(GL_COLOR_ATTACHMENT0_EXT);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glPushAttrib(GL_VIEWPORT_BIT);
+		glViewport(0,0,400, 400);
+	
+		//glutSolidTeapot(5.0);
+		player1.draw();
+		player2.draw();
+
+		glPopAttrib();
+		
+		glDrawBuffer(GL_COLOR_ATTACHMENT1_EXT);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glPushAttrib(GL_VIEWPORT_BIT);
+		glViewport(0,0,400, 400);
+		
+		glEnable( GL_TEXTURE_2D );
+		//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); // the default anyway
+		//glEnable(GL_BLEND);
+		glUseProgram(g_glowHorizontalProgram);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, img);
+		glBegin(GL_QUADS);
+		glTexCoord2d(-1.0,0.0); glVertex2d(-1.0,-1.0);
+		glTexCoord2d(1.0,0.0); glVertex2d(1.0,-1.0);
+		glTexCoord2d(1.0,1.0); glVertex2d(1.0,1.0);
+		glTexCoord2d(0.0,1.0); glVertex2d(-1.0,1.0);
+		glEnd();
 		glPopMatrix();
+		glDisable( GL_TEXTURE_2D );
+		glDisable( GL_BLEND );
+		
+		
+		glPopAttrib();
+		
+		glBindFramebufferEXT(GL_FRAMEBUFFER, 0);
+		
+		glEnable( GL_TEXTURE_2D );
+		glBlendFunc(GL_ONE, GL_ONE);
+		glEnable(GL_BLEND);
+		glUseProgram(g_glowVerticalProgram);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, img2);
+		glBegin(GL_QUADS);
+		glTexCoord2d(-1.0,0.0); glVertex2d(-1.0,-1.0);
+		glTexCoord2d(1.0,0.0); glVertex2d(1.0,-1.0);
+		glTexCoord2d(1.0,1.0); glVertex2d(1.0,1.0);
+		glTexCoord2d(0.0,1.0); glVertex2d(-1.0,1.0);
+		glEnd();
+		glPopMatrix();
+		glDisable( GL_TEXTURE_2D );
+		glDisable( GL_BLEND );
+		// restore matrix state
 		glUseProgram(0);
 		glutSwapBuffers();
+		
 	}
 	
 	
@@ -350,6 +503,7 @@ int main(int argc, char** argv)
 	cerr << "Using GLEW " << glewGetString(GLEW_VERSION) << endl;
 	
 	init();
+	
 	glutReshapeFunc(lightReshape);
 	glutDisplayFunc(display); 
 	glutKeyboardFunc(keyboard);

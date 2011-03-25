@@ -9,7 +9,7 @@
 
 #include "grid.h"
 
-Grid::Grid(GLuint rows = 10, GLuint cols = 10, GLfloat cellWidth = 1, GLfloat cellHeight = 1): d_rows(rows), d_cols(cols), d_cellWidth(cellWidth), d_cellHeight(cellHeight), d_map(rows * cols) {
+Grid::Grid(GLuint rows = 10, GLuint cols = 10, GLfloat cellWidth = 1, GLfloat cellHeight = 1): d_rows(rows), d_cols(cols), d_cellWidth(cellWidth), d_cellHeight(cellHeight), d_map((rows + 1) * (cols + 1)) {
 	d_dimensions.x() = rows * cellHeight;
 	d_dimensions.z() = cols * cellWidth;
 }
@@ -17,12 +17,14 @@ Grid::Grid(GLuint rows = 10, GLuint cols = 10, GLfloat cellWidth = 1, GLfloat ce
 Grid::~Grid() {}
 
 void Grid::init() {
+	
 	// Generate the grid
-	vec3f vertices[d_rows * d_cols * 2];
+	d_numVerts = (d_rows + 1) * (d_cols + 1) * 2;
+	vec3f vertices[d_numVerts];
 	int index = 0;
 	
-	for (int i = 0; i < d_rows -1; i++) {
-		for (int j = 0; j < d_cols; j++) {
+	for (int i = 0; i <= d_rows ; i++) {
+		for (int j = 0; j <= d_cols; j++) {
 			vertices[index++] = vec3f(i * d_cellHeight, 0.0, j * d_cellWidth);
 			vertices[index++] = vec3f((i + 1) * d_cellHeight, 0, j * d_cellWidth);
 		}
@@ -32,7 +34,7 @@ void Grid::init() {
 	glGenBuffers(1, &d_vbo);
 	glBindBuffer(GL_ARRAY_BUFFER, d_vbo );
 	glBufferData(GL_ARRAY_BUFFER, 
-				 sizeof(vec3f) * d_rows * d_cols * 2,
+				 sizeof(vec3f) * d_numVerts,
 				 &vertices[0], GL_STATIC_DRAW);
 	
 }
@@ -45,7 +47,7 @@ void Grid::draw() {
 	glBindBuffer(GL_ARRAY_BUFFER, d_vbo);
 	glVertexPointer(3, GL_FLOAT, 0, 0);
 	for (int i = 0; i < d_rows; i++) {
-		glDrawArrays(GL_QUAD_STRIP, i * d_cols * 2, d_cols * 2);
+		glDrawArrays(GL_QUAD_STRIP, i * (d_cols + 1) * 2, (d_cols + 1) * 2);
 	}
 	glPolygonMode ( GL_FRONT_AND_BACK, GL_FILL ) ;
 }

@@ -21,7 +21,8 @@ public:
 	GLfloat d_speed;
 	GLfloat d_partial;
 	
-	GLfloat d_turnTravel;
+	// How far you've travelled since your last turn.
+	GLfloat d_turnTravel; 
 	
 	// Reference to the grid
 	Grid& grid;

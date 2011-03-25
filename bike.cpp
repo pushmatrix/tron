@@ -16,6 +16,7 @@ Bike::Bike(vec3f startPos, GLfloat speed, Grid& grid, vec4f color) : d_speed(spe
 	d_cellPos.y() = startPos.z();
 	d_direction.x() = 1;
 	d_direction.y() = 0;
+	// TODO: set wall on the starting pos
 }
 Bike::~Bike() {}
 
