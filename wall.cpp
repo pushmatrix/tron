@@ -25,6 +25,7 @@ void Wall::grow(vec3f position, bool corner = false) {
 		d_verts.back() = position;
 	} else {
 		d_verts.push_back(position);
+		d_verts.push_back(position);
 	}
 }
 
