@@ -25,10 +25,13 @@ int rotationY = 0;
 int deltaX = 0;
 int deltaY = 0;
 
-Grid grid(10, 10, 1, 1);
+Grid grid(50, 50, 1, 1);
 
-Bike player1(vec3f(4,0,4), 11.0f, grid, vec4f(0.8f,0.6f,0.1f,1.0f));
-Bike player2(vec3f(5,0,5), 11.0f, grid, vec4f(0.1f,0.6f,0.8f,1.0f));
+Bike player1(vec3f(30,0,25), vec2i(1,0), 11.0f, grid, vec4f(0.8f,0.6f,0.1f,1.0f));
+Bike player2(vec3f(20,0,25), vec2i(-1,0), 11.0f, grid, vec4f(0.1f,0.6f,0.8f,1.0f));
+
+int winWidth = 1280;
+int winHeight = 752;
 
 
 
@@ -278,8 +281,8 @@ namespace CSI4130 {
 	void update() {
 		GLfloat timestep = (glutGet(GLUT_ELAPSED_TIME) - elapsed) * 0.001;
 		elapsed = glutGet(GLUT_ELAPSED_TIME); 
-		//player1.update(timestep);
-		//player2.update(timestep);
+		player1.update(timestep);
+		player2.update(timestep);
 	}
 	/**
 	 * Idle routine - update scene
@@ -324,29 +327,103 @@ namespace CSI4130 {
 						static_cast<GLfloat>( g_light.d_pointLight ))); 
 		//glRotated(rotationY, 0, 0, 1);
 		//glRotated(rotationX, 0, 1, 0);
+		
 		// move camera
 		//gluLookAt( player1.d_position.x() -player1.d_direction.x() * 5,4, player1.d_position.z() -player1.d_direction.y() * 5, 
 		//		  player1.d_position.x() + player1.d_direction.x(), 1, player1.d_position.z() + player1.d_direction.y(), 0, 1, 0.0f);
 		//glPushMatrix();
 		//glTranslatef(-grid.getWidth() * 0.5f, -14.0f, -grid.getDepth() * 0.5f);
 
-		// Move the camera based on mouse interaction.
-		glTranslatef( 0,0,
-					 -(g_winSize.d_near+
-					   1.0f/2.0f*(g_winSize.d_far-g_winSize.d_near)));
 
-		glUseProgram(g_colorProgram);
-		glRotated(rotationY, 1, 0, 0);
-		glRotated(rotationX, 0, 1, 0);
-		
-		glTranslatef(-grid.getWidth() * 0.5f, -1.0f, -grid.getDepth() * 0.5f);
-		
 		glColor3f(0.8,0.1,0.3);
-		//glutSolidTeapot(5.0);
+		
+		glMatrixMode(GL_PROJECTION);
+		glViewport( 0, winHeight/2, winWidth, winHeight/2);
+		glLoadIdentity();		
+		gluPerspective(  60.0,
+									 (float)winWidth/(winHeight/2),
+									 0.1,
+									 500.0);
+		gluLookAt( player1.d_cameraPos.x(), 1, player1.d_cameraPos.y(), 
+							player1.d_cameraEye.x(), player1.d_cameraEye.y(), player1.d_cameraEye.z(),
+							0, 1, 0.0f);
 		grid.draw();
 		glUseProgram(g_lightProgram);
 		player1.draw();
-		//player2.draw();
+		player2.draw();
+		
+		//glUseProgram(g_colorProgram);
+		
+		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+		glDrawBuffer(GL_COLOR_ATTACHMENT0_EXT);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glPushAttrib(GL_VIEWPORT_BIT);
+		glViewport(0,0,400, 400);
+		
+		//glutSolidTeapot(5.0);
+		
+		player1.draw();
+		player2.draw();
+		
+		glPopAttrib();
+		
+		glDrawBuffer(GL_COLOR_ATTACHMENT1_EXT);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glPushAttrib(GL_VIEWPORT_BIT);
+		glViewport(0,0,400, 400);
+		
+		glEnable( GL_TEXTURE_2D );
+		//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); // the default anyway
+		//glEnable(GL_BLEND);
+		glUseProgram(g_glowHorizontalProgram);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, img);
+		glBegin(GL_QUADS);
+		glTexCoord2d(-1.0,0.0); glVertex2d(-1.0,-1.0);
+		glTexCoord2d(1.0,0.0); glVertex2d(1.0,-1.0);
+		glTexCoord2d(1.0,1.0); glVertex2d(1.0,1.0);
+		glTexCoord2d(0.0,1.0); glVertex2d(-1.0,1.0);
+		glEnd();
+		glPopMatrix();
+		glDisable( GL_TEXTURE_2D );
+		glDisable( GL_BLEND );
+		
+		
+		glPopAttrib();
+		
+		glBindFramebufferEXT(GL_FRAMEBUFFER, 0);
+		
+		glEnable( GL_TEXTURE_2D );
+		glBlendFunc(GL_ONE, GL_ONE);
+		glEnable(GL_BLEND);
+		glUseProgram(g_glowVerticalProgram);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, img2);
+		glBegin(GL_QUADS);
+		glTexCoord2d(-1.0,0.0); glVertex2d(-1.0,-1.0);
+		glTexCoord2d(1.0,0.0); glVertex2d(1.0,-1.0);
+		glTexCoord2d(1.0,1.0); glVertex2d(1.0,1.0);
+		glTexCoord2d(0.0,1.0); glVertex2d(-1.0,1.0);
+		glEnd();
+		glPopMatrix();
+		glDisable( GL_TEXTURE_2D );
+		glDisable( GL_BLEND );
+		// restore matrix state
+		glUseProgram(0);
+		
+		glViewport( 0, 0, winWidth, winHeight/2);
+		glLoadIdentity();		
+		gluPerspective(  60.0,
+									 (float)winWidth/(winHeight/2),
+									 0.1,
+									 500.0);
+		gluLookAt( player2.d_cameraPos.x(), 1, player2.d_cameraPos.y(), 
+							player2.d_cameraEye.x(), player2.d_cameraEye.y(), player2.d_cameraEye.z(),
+							0, 1, 0.0f);
+		grid.draw();
+		glUseProgram(g_lightProgram);
+		player1.draw();
+		player2.draw();
 		
 		//glUseProgram(g_colorProgram);
 		
@@ -359,7 +436,7 @@ namespace CSI4130 {
 		//glutSolidTeapot(5.0);
 		
 		player1.draw();
-		//player2.draw();
+		player2.draw();
 
 		glPopAttrib();
 		
@@ -426,14 +503,15 @@ namespace CSI4130 {
 			g_winSize.d_width = minDim;
 			g_winSize.d_height = minDim * (GLfloat)_height/(GLfloat)_width;
 		}
-		gluPerspective(  60.0,
+		/*gluPerspective(  60.0,
 					   (float)_width/(float)_height,
 					   0.1,
-					   500.0);
+					   500.0);*/
 		g_winSize.d_widthPixel = _width;
 		g_winSize.d_heightPixel = _height;
 		// reshape our viewport
-		glViewport( 0, 0, _width, _height);
+		//glViewport( _width/2, _height/2, _width/2, _height/2);
+		
 	}
 	
 	
@@ -441,12 +519,10 @@ namespace CSI4130 {
 	{
 		switch (key) {
 			case GLUT_KEY_LEFT:
-				player1.d_nextDirection.x() = player1.d_direction.y();
-				player1.d_nextDirection.y() = -player1.d_direction.x();
+				player1.turnLeft();
 				break;
 			case GLUT_KEY_RIGHT: 
-				player1.d_nextDirection.x() = -player1.d_direction.y();
-				player1.d_nextDirection.y() = player1.d_direction.x();
+				player1.turnRight();
 				break;
 			default: break;
 		}
@@ -462,6 +538,11 @@ namespace CSI4130 {
 				
 			case 'q':
 				exit(0);
+				break;
+			case 'r':
+				grid.reset();
+				player1.reset();
+				player2.reset();
 				break;
 			case 'Z':
 				// increase near plane
@@ -485,12 +566,10 @@ namespace CSI4130 {
 				glDisable(GL_LIGHTING);
 				break;
 			case 'a':
-				player2.d_nextDirection.x() = player2.d_direction.y();
-				player2.d_nextDirection.y() = -player2.d_direction.x();
+				player2.turnLeft();
 				break;
-			case 's': 
-				player2.d_nextDirection.x() = -player2.d_direction.y();
-				player2.d_nextDirection.y() = player2.d_direction.x();
+			case 's':
+				player2.turnRight();
 				break;
 			default:
 				break;
@@ -508,7 +587,7 @@ int main(int argc, char** argv)
 	
 	glutInit(&argc, argv);
 	glutInitDisplayMode (GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
-	glutInitWindowSize (800, 600); 
+	glutInitWindowSize (winWidth, winHeight); 
 	glutInitWindowPosition (0, 0);
 	glutCreateWindow (argv[0]);
 	GLenum err = glewInit();

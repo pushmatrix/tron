@@ -34,6 +34,6 @@ public:
 	// Given coordinates, return the position on the map.
 	vec2f coordsToMapPos(vec3f coords);
 	
-	
+	void reset();
 };
 #endif
