@@ -30,6 +30,9 @@ Grid grid(50, 50, 1, 1);
 Bike player1(vec3f(4,0,4), 11.0f, grid, vec4f(0.8f,0.1f,0.6f,1.0f));
 Bike player2(vec3f(5,0,5), 11.0f, grid, vec4f(0.1f,0.6f,0.8f,1.0f));
 
+int winWidth = 1280;
+int winHeight = 752;
+
 
 
 namespace CSI4130 {
@@ -307,12 +310,6 @@ namespace CSI4130 {
 						static_cast<GLfloat>( g_light.d_pointLight ))); 
 		//glRotated(rotationY, 0, 0, 1);
 		//glRotated(rotationX, 0, 1, 0);
-		// move camera
-		gluLookAt( player1.d_cameraPos.x(), 4, player1.d_cameraPos.y(), 
-							 player1.d_cameraEye.x(), player1.d_cameraEye.y(), player1.d_cameraEye.z(),
-							 0, 1, 0.0f);
-		//glPushMatrix();
-
 		
 		// Add the teapot relative
 		if (lightOn) { 
@@ -320,6 +317,7 @@ namespace CSI4130 {
 		} else {
 			glColor3f(0.9f, 0.9f, 0.9f);  // white
 		}
+		/*
 		// Move the camera based on mouse interaction.
 		//glTranslatef( 0,0,
 		//			 -(g_winSize.d_near+
@@ -328,9 +326,32 @@ namespace CSI4130 {
 		//glRotated(rotationX, 0, 1, 0);
 		
 		//glTranslatef(-grid.getWidth() * 0.5f, -14.0f, -grid.getDepth() * 0.5f);
-		
+		*/
 		glColor3f(0.8,0.1,0.3);
-		//glutSolidTeapot(5.0);
+		
+		glMatrixMode(GL_PROJECTION);
+		glViewport( 0, winHeight/2, winWidth, winHeight/2);
+		glLoadIdentity();		
+		gluPerspective(  60.0,
+									 (float)winWidth/(winHeight/2),
+									 0.1,
+									 500.0);
+		gluLookAt( player1.d_cameraPos.x(), 4, player1.d_cameraPos.y(), 
+							player1.d_cameraEye.x(), player1.d_cameraEye.y(), player1.d_cameraEye.z(),
+							0, 1, 0.0f);
+		grid.draw();
+		player1.draw();
+		player2.draw();
+		
+		glViewport( 0, 0, winWidth, winHeight/2);
+		glLoadIdentity();		
+		gluPerspective(  60.0,
+									 (float)winWidth/(winHeight/2),
+									 0.1,
+									 500.0);
+		gluLookAt( player2.d_cameraPos.x(), 4, player2.d_cameraPos.y(), 
+							player2.d_cameraEye.x(), player2.d_cameraEye.y(), player2.d_cameraEye.z(),
+							0, 1, 0.0f);
 		grid.draw();
 		player1.draw();
 		player2.draw();
@@ -410,14 +431,15 @@ namespace CSI4130 {
 			g_winSize.d_width = minDim;
 			g_winSize.d_height = minDim * (GLfloat)_height/(GLfloat)_width;
 		}
-		gluPerspective(  60.0,
+		/*gluPerspective(  60.0,
 					   (float)_width/(float)_height,
 					   0.1,
-					   500.0);
+					   500.0);*/
 		g_winSize.d_widthPixel = _width;
 		g_winSize.d_heightPixel = _height;
 		// reshape our viewport
-		glViewport( 0, 0, _width, _height);
+		//glViewport( _width/2, _height/2, _width/2, _height/2);
+		
 	}
 	
 	
@@ -425,12 +447,10 @@ namespace CSI4130 {
 	{
 		switch (key) {
 			case GLUT_KEY_LEFT:
-				player1.d_nextDirection.x() = player1.d_direction.y();
-				player1.d_nextDirection.y() = -player1.d_direction.x();
+				player1.turnLeft();
 				break;
 			case GLUT_KEY_RIGHT: 
-				player1.d_nextDirection.x() = -player1.d_direction.y();
-				player1.d_nextDirection.y() = player1.d_direction.x();
+				player1.turnRight();
 				break;
 			default: break;
 		}
@@ -474,12 +494,10 @@ namespace CSI4130 {
 				glDisable(GL_LIGHTING);
 				break;
 			case 'a':
-				player2.d_nextDirection.x() = player2.d_direction.y();
-				player2.d_nextDirection.y() = -player2.d_direction.x();
+				player2.turnLeft();
 				break;
-			case 's': 
-				player2.d_nextDirection.x() = -player2.d_direction.y();
-				player2.d_nextDirection.y() = player2.d_direction.x();
+			case 's':
+				player2.turnRight();
 				break;
 			default:
 				break;
@@ -497,7 +515,7 @@ int main(int argc, char** argv)
 	
 	glutInit(&argc, argv);
 	glutInitDisplayMode (GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
-	glutInitWindowSize (800, 600); 
+	glutInitWindowSize (winWidth, winHeight); 
 	glutInitWindowPosition (0, 0);
 	glutCreateWindow (argv[0]);
 	GLenum err = glewInit();

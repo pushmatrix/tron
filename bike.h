@@ -24,11 +24,11 @@ public:
 	GLfloat d_freeFall;
 	GLfloat d_startSpeed;
 	GLfloat d_partial;
+	GLfloat d_angle;
+	GLfloat d_nextAngle;
 	
 	vec2f d_cameraPos;
 	vec3f d_cameraEye;
-	
-	GLfloat test;
 	
 	// How far you've travelled since your last turn.
 	GLfloat d_turnTravel; 
@@ -47,4 +47,6 @@ public:
 	void reset();
 	void updateCamera();
 	bool outOfBounds(GLfloat _x, GLfloat _z);
+	void turnLeft();
+	void turnRight();
 };

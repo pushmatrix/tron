@@ -12,6 +12,8 @@
 Bike::Bike(vec3f startPos, GLfloat speed, Grid& grid, vec4f color) : d_speed(speed), grid(grid), d_wall(1.0f, startPos), d_color(color) {
 	d_startPos = startPos;
 	d_startSpeed = d_speed;
+	d_cameraPos.x() = d_position.x();
+	d_cameraPos.y() = d_position.z();
 	reset();
 }
 
@@ -25,9 +27,10 @@ void Bike::update(GLfloat timestep) {
 	// Check for falling first
 	if (outOfBounds(d_position.x(), d_position.z())) {
 		d_freeFall += timestep; 
-		d_position.y() += -0.008 * d_freeFall;
+		d_position.y() += -0.045 * d_freeFall;
 		d_wall.grow(d_position, true);
 		d_nextDirection = d_direction;
+		d_nextAngle = 0;
 	}
 	
 	if (d_partial + distance >= grid.d_cellWidth) {
@@ -40,6 +43,8 @@ void Bike::update(GLfloat timestep) {
 		if (d_nextDirection.x() != 0 || d_nextDirection.y() != 0) {
 			d_direction.x() = d_nextDirection.x();
 			d_direction.y() = d_nextDirection.y();
+			d_angle += d_nextAngle;
+			d_nextAngle = 0;
 			d_nextDirection.x() = 0;
 			d_nextDirection.y() = 0;
 			d_turnTravel = 0;
@@ -72,7 +77,8 @@ void Bike::draw() {
 	d_wall.draw();
 	glPushMatrix();
 	glTranslatef(d_position.x(), d_position.y(), d_position.z());
-		glutSolidSphere(0.5f, 10.0f, 10.0f);
+	glRotatef(d_angle, 0,1,0);
+  glutSolidSphere(.1, 10, 10);
 	glPopMatrix();
 }
 
@@ -83,19 +89,23 @@ void Bike::reset() {
 	d_direction.x() = 1;
 	d_direction.y() = 0;
 	d_vSpeed = 0;
+	d_nextDirection = d_direction;
 	d_speed = d_startSpeed;
+	d_freeFall = 0;
+	d_cameraPos.x() = d_position.x();
+	d_cameraPos.y() = d_position.z();
 	d_wall.reset(d_startPos);
+	d_angle = 0;
 }
 
 void Bike::updateCamera() {
 	if (!outOfBounds(d_position.x(), d_position.y())) {
-		d_cameraPos.x() += (d_position.x() - d_cameraPos.x() - d_direction.x() * 7)/20;
-		d_cameraPos.y() += (d_position.z() - d_cameraPos.y() - d_direction.y() * 7)/20;
+		d_cameraPos.x() += (d_position.x() - d_cameraPos.x() - d_direction.x() * 7)/12;
+		d_cameraPos.y() += (d_position.z() - d_cameraPos.y() - d_direction.y() * 7)/12;
 	} else if (!outOfBounds(d_cameraPos.x(), d_cameraPos.y())) {
-		d_cameraPos.x() += d_direction.x() * .0013;
-		d_cameraPos.y() += d_direction.y() * .0013;
+		d_cameraPos.x() += d_direction.x() * .01;
+		d_cameraPos.y() += d_direction.y() * .01;
 	}
-
 
 	d_cameraEye.x() = d_position.x() + d_direction.x() * 6.5;
 	d_cameraEye.y() = d_position.y();
@@ -108,5 +118,16 @@ bool Bike::outOfBounds(GLfloat _x, GLfloat _z) {
 	} else {
 		return false;
 	}
+}
 
+void Bike::turnLeft() {
+	d_nextDirection.x() = d_direction.y();
+	d_nextDirection.y() = -d_direction.x();
+	d_nextAngle += 90;
+}
+
+void Bike::turnRight() {
+	d_nextDirection.x() = -d_direction.y();
+	d_nextDirection.y() = d_direction.x();
+	d_nextAngle -= 90;
 }
