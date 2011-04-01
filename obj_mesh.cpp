@@ -58,10 +58,16 @@ namespace CSI4130 {
 	bool OBJMesh::readMTL(const std::string& _fileName){
 		ifstream file(_fileName.c_str());
 		
+		if (!file.is_open()){
+			cerr << "Error: " << _fileName << " does not exist" << endl;
+			return false;
+		}
+		
 		// Parse one line at a time
 		string line, token;
 		Material* currentMaterial = &d_materials["default"];;
-		// //cerr << "Reading ..." << endl;
+		cerr << "Reading mat file..." << endl;
+		
 		while (getline(file, line)) {
 			istringstream streamLine(line);
 			// //cerr << "Got: " << line << endl;
@@ -86,12 +92,12 @@ namespace CSI4130 {
 						currentMaterial->d_ambient.z() = property.z();
 						currentMaterial->d_ambient.w() = 1;
 					} else if(token.compare("Kd")==0){
-						vec3f property;
+						vec4f property;
 						streamLine >> property;
 						currentMaterial->d_diffuse.x() = property.x();
 						currentMaterial->d_diffuse.y() = property.y();
 						currentMaterial->d_diffuse.z() = property.z();
-						currentMaterial->d_diffuse.w() = 1;
+						currentMaterial->d_diffuse.w() = property.w();
 					} else if(token.compare("Ks")==0){
 						vec3f property;
 						streamLine >> property;
@@ -405,6 +411,7 @@ namespace CSI4130 {
 		// no longer needed now OpenGL stores it
 		d_vertArrVec.clear();
 		d_normalArrVec.clear();
+		cerr << ".obj loaded successfully!" <<endl;
 		return true;
 	}
 	
@@ -412,7 +419,7 @@ namespace CSI4130 {
 	void OBJMesh::draw(bool lightOn = true) {
 		// uses the default normal in z
 		if (!d_init) {
-			//cerr << "OBJMesh was not initialized!" << endl;
+			cerr << "OBJMesh was not initialized!" << endl;
 			return;
 		}
 		glEnableClientState(GL_VERTEX_ARRAY);

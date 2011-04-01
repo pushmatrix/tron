@@ -6,12 +6,12 @@
  *  Copyright 2011 __MyCompanyName__. All rights reserved.
  *
  */
-#include "mesh.h"
+#include "obj_mesh.h"
 #include "grid.h"
 #include "wall.h"
 #include <GLUT/glut.h>
 
-class Bike: public Mesh {
+class Bike: public OBJMesh {
 public:
 	Wall d_wall;
 	

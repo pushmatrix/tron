@@ -25,9 +25,9 @@
 // ==========================================================================
 #version 110
 varying vec3 normalVec, lightVec, eyeVec;
-uniform vec4 specularMaterial;
 
 void main() {
+  if( gl_FrontMaterial.diffuse[3] < 1.0 ) {
   vec3 NVec = normalize(normalVec);
   vec3 LVec = normalize(lightVec);
   vec3 EVec = normalize(eyeVec);
@@ -45,14 +45,12 @@ void main() {
   // diffuse term
   float dotNL = max(0.0,dot(NVec,LVec));
   vec4 diffuse = gl_FrontMaterial.diffuse * gl_LightSource[0].diffuse * dotNL;
-  
+
   vec3 HVec = normalize(LVec+EVec);
   float dotNH = max(0.0,dot(NVec,HVec));
- // vec4 specular = gl_FrontMaterial.specular * gl_LightSource[0].specular 
-  //     * pow(dotNH,gl_FrontMaterial.shininess);
+  vec4 specular = gl_FrontMaterial.specular * gl_LightSource[0].specular 
+       * pow(dotNH,gl_FrontMaterial.shininess);
 
-  vec4 specular = specularMaterial * gl_LightSource[0].specular * pow(dotNH,gl_FrontMaterial.shininess);
-  
   // spot light
   float spot_attenuation = 1.0;
   float dotSV = dot(-EVec,normalize(gl_LightSource[0].spotDirection));
@@ -65,4 +63,7 @@ void main() {
   // color
   gl_FragColor = ambient + 
     attenuation * spot_attenuation * (diffuse + specular);
+} else {
+	gl_FragColor = gl_Color * gl_FrontMaterial.diffuse[3];
+	}
 }

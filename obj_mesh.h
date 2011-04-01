@@ -89,8 +89,11 @@ class OBJMesh {
   GLuint d_nGroups; 
   GLuint d_bufferObject;
   GLuint d_normalObject;
+	
 
 public:
+	vec3f d_position;
+	vec3f d_velocity;
   OBJMesh();
   ~OBJMesh();
 	bool init(const std::string& _fileName, const std::string& _mtlFileName);

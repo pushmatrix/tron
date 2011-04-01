@@ -20,6 +20,10 @@ Bike::Bike(vec3f startPos, GLfloat speed, Grid& grid, vec4f color) : d_speed(spe
 }
 Bike::~Bike() {}
 
+void Bike::init() {
+	OBJMesh::init("bike.obj","bike.mtl");
+}
+
 void Bike::update(GLfloat timestep) {
 	
 	GLfloat distance = d_speed * timestep;
@@ -55,7 +59,7 @@ void Bike::update(GLfloat timestep) {
 	d_turnTravel += distance;
 	d_position.x() += d_direction.x() * distance;
 	d_position.z() += d_direction.y() * distance;
-	if(d_turnTravel > getDepth()) {
+	if(d_turnTravel > depth()) {
 	   d_wall.grow(d_position, false);
 	}
 	
@@ -65,7 +69,8 @@ void Bike::draw() {
 	glColor3f(d_color.r(), d_color.g(), d_color.b());
 	d_wall.draw();
 	glPushMatrix();
-		glTranslatef(d_position.x(), d_position.y(), d_position.z());
-		glutSolidSphere(0.5f, 10.0f, 10.0f);
+		glTranslatef(d_position.x(), d_position.y(), d_position.z() + 6);
+		glScalef(0.2,0.2,0.2);
+		OBJMesh::draw(true);
 	glPopMatrix();
 }

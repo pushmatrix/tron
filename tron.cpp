@@ -25,9 +25,9 @@ int rotationY = 0;
 int deltaX = 0;
 int deltaY = 0;
 
-Grid grid(50, 50, 1, 1);
+Grid grid(10, 10, 1, 1);
 
-Bike player1(vec3f(4,0,4), 11.0f, grid, vec4f(0.8f,0.1f,0.6f,1.0f));
+Bike player1(vec3f(4,0,4), 11.0f, grid, vec4f(0.8f,0.6f,0.1f,1.0f));
 Bike player2(vec3f(5,0,5), 11.0f, grid, vec4f(0.1f,0.6f,0.8f,1.0f));
 
 
@@ -103,6 +103,7 @@ namespace CSI4130 {
 	Material g_material;
 	
 	GLuint g_lightProgram;
+	GLuint g_glowExtractProgram;
 	GLuint g_glowHorizontalProgram;
 	GLuint g_glowVerticalProgram;
 	GLuint g_colorProgram;
@@ -135,6 +136,8 @@ namespace CSI4130 {
 		
 		// Set up stuff
 		grid.init();
+		player1.init();
+		player2.init();
 		
 		
 		glGenRenderbuffers(1, &renderbuffer);
@@ -180,6 +183,8 @@ namespace CSI4130 {
 		GLuint handle;
 		
 		
+		
+		
 		// Load blur shaders
 		Shader glowHorizontalSh;
 		cerr << "Loading shaders: " << endl;
@@ -216,6 +221,22 @@ namespace CSI4130 {
 		g_glowVerticalMap = glGetUniformLocation(g_glowVerticalProgram, "glowMap");
 		
 		
+		
+		// This shader extracts only the parts of the scene that should glow
+		Shader glowExtractSh;
+		sHandles.clear();
+		if ( !glowExtractSh.load("a3_color.vs", GL_VERTEX_SHADER )) {
+			glowExtractSh.installShader( handle, GL_VERTEX_SHADER );
+			Shader::compile( handle );
+			sHandles.push_back( handle );
+		}
+		if ( !glowExtractSh.load("glow_extract.fs", GL_FRAGMENT_SHADER )) {
+			glowExtractSh.installShader( handle, GL_FRAGMENT_SHADER ); 
+			Shader::compile( handle );
+			sHandles.push_back( handle );
+		}
+		cerr << "No of handles: " << sHandles.size() << endl;
+		Shader::installProgram(sHandles, g_glowExtractProgram); 
 		
 		// Load color shaders
 		sHandles.clear();
@@ -257,8 +278,8 @@ namespace CSI4130 {
 	void update() {
 		GLfloat timestep = (glutGet(GLUT_ELAPSED_TIME) - elapsed) * 0.001;
 		elapsed = glutGet(GLUT_ELAPSED_TIME); 
-		player1.update(timestep);
-		player2.update(timestep);
+		//player1.update(timestep);
+		//player2.update(timestep);
 	}
 	/**
 	 * Idle routine - update scene
@@ -292,47 +313,42 @@ namespace CSI4130 {
 		glMatrixMode(GL_MODELVIEW);
 		glPushMatrix();
 		glLoadIdentity();
-		GLboolean lightOn = glIsEnabled(GL_LIGHTING);
-		if ( lightOn ) {
-			// Use the light shader program
-			//glUseProgram(g_lightProgram);
-		} else {
-			//glUseProgram(g_colorProgram);
-		}
+
+		
+		//g_material.setState();
 		// Place a light source at a radius from the camera
 		glLightfv(GL_LIGHT0, GL_POSITION, 
 				  vec4f( cos(g_lightAngle)*g_winSize.d_width, 
 						sin(g_lightAngle)*g_winSize.d_width, 
 						static_cast<GLfloat>( !g_light.d_pointLight ), 
 						static_cast<GLfloat>( g_light.d_pointLight ))); 
-		glRotated(rotationY, 0, 0, 1);
-		glRotated(rotationX, 0, 1, 0);
-		// move camera
-		gluLookAt( player1.d_position.x() -player1.d_direction.x() * 5,4, player1.d_position.z() -player1.d_direction.y() * 5, 
-				  player1.d_position.x() + player1.d_direction.x(), 1, player1.d_position.z() + player1.d_direction.y(), 0, 1, 0.0f);
-		//glPushMatrix();
-
-		
-		// Add the teapot relative
-		if (lightOn) { 
-			g_material.setState();
-		} else {
-			glColor3f(0.9f, 0.9f, 0.9f);  // white
-		}
-		// Move the camera based on mouse interaction.
-		//glTranslatef( 0,0,
-		//			 -(g_winSize.d_near+
-		//			   1.0f/2.0f*(g_winSize.d_far-g_winSize.d_near)));
-		//glRotated(rotationY, 1, 0, 0);
+		//glRotated(rotationY, 0, 0, 1);
 		//glRotated(rotationX, 0, 1, 0);
-		
+		// move camera
+		//gluLookAt( player1.d_position.x() -player1.d_direction.x() * 5,4, player1.d_position.z() -player1.d_direction.y() * 5, 
+		//		  player1.d_position.x() + player1.d_direction.x(), 1, player1.d_position.z() + player1.d_direction.y(), 0, 1, 0.0f);
+		//glPushMatrix();
 		//glTranslatef(-grid.getWidth() * 0.5f, -14.0f, -grid.getDepth() * 0.5f);
+
+		// Move the camera based on mouse interaction.
+		glTranslatef( 0,0,
+					 -(g_winSize.d_near+
+					   1.0f/2.0f*(g_winSize.d_far-g_winSize.d_near)));
+
+		glUseProgram(g_colorProgram);
+		glRotated(rotationY, 1, 0, 0);
+		glRotated(rotationX, 0, 1, 0);
+		
+		glTranslatef(-grid.getWidth() * 0.5f, -1.0f, -grid.getDepth() * 0.5f);
 		
 		glColor3f(0.8,0.1,0.3);
 		//glutSolidTeapot(5.0);
 		grid.draw();
+		glUseProgram(g_lightProgram);
 		player1.draw();
-		player2.draw();
+		//player2.draw();
+		
+		//glUseProgram(g_colorProgram);
 		
 		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 		glDrawBuffer(GL_COLOR_ATTACHMENT0_EXT);
@@ -341,8 +357,9 @@ namespace CSI4130 {
 		glViewport(0,0,400, 400);
 	
 		//glutSolidTeapot(5.0);
+		
 		player1.draw();
-		player2.draw();
+		//player2.draw();
 
 		glPopAttrib();
 		
