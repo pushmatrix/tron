@@ -305,11 +305,12 @@ namespace CSI4130 {
 						sin(g_lightAngle)*g_winSize.d_width, 
 						static_cast<GLfloat>( !g_light.d_pointLight ), 
 						static_cast<GLfloat>( g_light.d_pointLight ))); 
-		glRotated(rotationY, 0, 0, 1);
-		glRotated(rotationX, 0, 1, 0);
+		//glRotated(rotationY, 0, 0, 1);
+		//glRotated(rotationX, 0, 1, 0);
 		// move camera
-		gluLookAt( player1.d_position.x() -player1.d_direction.x() * 5,4, player1.d_position.z() -player1.d_direction.y() * 5, 
-				  player1.d_position.x() + player1.d_direction.x(), 1, player1.d_position.z() + player1.d_direction.y(), 0, 1, 0.0f);
+		gluLookAt( player1.d_cameraPos.x(), 4, player1.d_cameraPos.y(), 
+							 player1.d_cameraEye.x(), player1.d_cameraEye.y(), player1.d_cameraEye.z(),
+							 0, 1, 0.0f);
 		//glPushMatrix();
 
 		
@@ -445,6 +446,11 @@ namespace CSI4130 {
 				
 			case 'q':
 				exit(0);
+				break;
+			case 'r':
+				grid.reset();
+				player1.reset();
+				player2.reset();
 				break;
 			case 'Z':
 				// increase near plane

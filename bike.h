@@ -18,8 +18,17 @@ public:
 	vec4f d_color;
 	vec2i d_direction;
 	vec2i d_cellPos;
+	vec3f d_startPos;
 	GLfloat d_speed;
+	GLfloat d_vSpeed;
+	GLfloat d_freeFall;
+	GLfloat d_startSpeed;
 	GLfloat d_partial;
+	
+	vec2f d_cameraPos;
+	vec3f d_cameraEye;
+	
+	GLfloat test;
 	
 	// How far you've travelled since your last turn.
 	GLfloat d_turnTravel; 
@@ -35,4 +44,7 @@ public:
 	void init();
 	void draw();
 	void update(GLfloat timestep);
+	void reset();
+	void updateCamera();
+	bool outOfBounds(GLfloat _x, GLfloat _z);
 };

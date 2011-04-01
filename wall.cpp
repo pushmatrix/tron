@@ -19,7 +19,6 @@ Wall::Wall(GLfloat height, vec3f startPos) {
 Wall::~Wall() {}
 
 
-
 void Wall::grow(vec3f position, bool corner = false) {
 	if(!corner) {
 		d_verts.back() = position;
@@ -35,5 +34,12 @@ void Wall::draw() {
 			glVertex3f(d_verts[i].x(), d_verts[i].y() + getHeight(), d_verts[i].z());
 		}
 	glEnd();
+}
+
+void Wall::reset(vec3f startPos) {
+	///
+	d_verts.clear();
+	d_verts.push_back(startPos);
+	d_verts.push_back(startPos);
 }
 

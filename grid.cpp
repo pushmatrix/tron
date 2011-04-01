@@ -91,3 +91,9 @@ vec2f Grid::coordsToMapPos(vec3f coords) {
 	
 	return vec2f(x, y);
 }
+
+void Grid::reset(){
+	for(int i = 0; i < d_map.size(); i++) {
+		d_map[i] = 0;
+	}
+}

@@ -23,5 +23,6 @@ public:
 	
 	void grow(vec3f position, bool corner);
 	void draw();
+	void reset(vec3f startPos);
 };
 #endif
