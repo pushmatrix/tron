@@ -32,7 +32,7 @@ void Wall::draw() {
 	glBegin(GL_QUAD_STRIP);
 		for (int i=0; i < d_verts.size(); i++) {
 			glVertex3f(d_verts[i].x(), d_verts[i].y(), d_verts[i].z());
-			glVertex3f(d_verts[i].x(), d_verts[i].y() + getHeight(), d_verts[i].z());
+			glVertex3f(d_verts[i].x() + 0.01, d_verts[i].y() + getHeight(), d_verts[i].z() + 0.01);
 		}
 	glEnd();
 }

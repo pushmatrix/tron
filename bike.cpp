@@ -11,9 +11,11 @@
 
 Bike::Bike(vec3f startPos, vec2i startDirection, GLfloat speed, Grid& grid, vec4f color) : d_speed(speed), d_angle(90), grid(grid), d_wall(0.2f, startPos), d_color(color) {
 	d_startPos = startPos;
-	d_startSpeed = d_speed;
+	d_startSpeed = speed;
 	d_startDirection.x() = startDirection.x();
 	d_startDirection.y() = startDirection.y();
+	d_nextDirection.x() = 0;
+	d_nextDirection.y() = 0;
 	d_cameraPos.x() = d_position.x();
 	d_cameraPos.y() = d_position.z();
 	reset();
@@ -36,10 +38,7 @@ void Bike::update(GLfloat timestep) {
 		d_position.y() += -0.045 * d_freeFall;
 		d_wall.grow(d_position, true);
 		d_nextDirection = d_direction;
-		d_nextAngle = 0;
-	}
-	
-	if (d_partial + distance >= grid.d_cellWidth) {
+	} else if (d_partial + distance >= grid.d_cellWidth) {
 		d_position.x() += d_direction.x() * (grid.d_cellWidth - d_partial);
 		d_position.z() += d_direction.y() * (grid.d_cellWidth - d_partial);
 		d_cellPos += d_direction;
@@ -49,8 +48,7 @@ void Bike::update(GLfloat timestep) {
 		if (d_nextDirection.x() != 0 || d_nextDirection.y() != 0) {
 			d_direction.x() = d_nextDirection.x();
 			d_direction.y() = d_nextDirection.y();
-			d_angle += d_nextAngle;
-			d_nextAngle = 0;
+			reorient();
 			d_nextDirection.x() = 0;
 			d_nextDirection.y() = 0;
 			d_turnTravel = 0;
@@ -90,19 +88,32 @@ void Bike::draw() {
 	glPopMatrix();
 }
 
+void Bike::reorient() {
+	if ( d_direction.x() == 1 ) {
+		d_angle = 90;
+	} else if (d_direction.x() == -1) {
+		d_angle = -90;
+	} else if (d_direction.y() == -1) {
+		d_angle = 180;
+	} else if (d_direction.y() == 1) {
+		d_angle = 0;
+	}
+}
 void Bike::reset() {
 	d_position = d_startPos;
+	d_partial = 0;
 	d_cellPos.x() = d_startPos.x();
 	d_cellPos.y() = d_startPos.z();
 	d_direction = d_startDirection;
 	d_vSpeed = 0;
-	d_nextDirection = d_direction;
+	d_nextDirection.x() = 0;
+	d_nextDirection.y() = 0;
 	d_speed = d_startSpeed;
 	d_freeFall = 0;
 	d_cameraPos.x() = d_position.x();
 	d_cameraPos.y() = d_position.z();
 	d_wall.reset(d_startPos);
-	d_angle = 90;
+	reorient();
 }
 
 void Bike::updateCamera() {
@@ -130,11 +141,9 @@ bool Bike::outOfBounds(GLfloat _x, GLfloat _z) {
 void Bike::turnLeft() {
 	d_nextDirection.x() = d_direction.y();
 	d_nextDirection.y() = -d_direction.x();
-	d_nextAngle += 90;
 }
 
 void Bike::turnRight() {
 	d_nextDirection.x() = -d_direction.y();
 	d_nextDirection.y() = d_direction.x();
-	d_nextAngle -= 90;
 }

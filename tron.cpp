@@ -27,7 +27,7 @@ int deltaY = 0;
 
 Grid grid(50, 50, 1, 1);
 
-Bike player1(vec3f(30,0,25), vec2i(1,0), 11.0f, grid, vec4f(0.8f,0.6f,0.1f,1.0f));
+Bike player1(vec3f(30,0,25), vec2i(1,0), 11.0f, grid, vec4f(0.9f,0.4f,0.1f,1.0f));
 Bike player2(vec3f(20,0,25), vec2i(-1,0), 11.0f, grid, vec4f(0.1f,0.6f,0.8f,1.0f));
 
 int winWidth = 1280;
@@ -106,7 +106,6 @@ namespace CSI4130 {
 	Material g_material;
 	
 	GLuint g_lightProgram;
-	GLuint g_glowExtractProgram;
 	GLuint g_glowHorizontalProgram;
 	GLuint g_glowVerticalProgram;
 	GLuint g_colorProgram;
@@ -224,23 +223,6 @@ namespace CSI4130 {
 		g_glowVerticalMap = glGetUniformLocation(g_glowVerticalProgram, "glowMap");
 		
 		
-		
-		// This shader extracts only the parts of the scene that should glow
-		Shader glowExtractSh;
-		sHandles.clear();
-		if ( !glowExtractSh.load("a3_color.vs", GL_VERTEX_SHADER )) {
-			glowExtractSh.installShader( handle, GL_VERTEX_SHADER );
-			Shader::compile( handle );
-			sHandles.push_back( handle );
-		}
-		if ( !glowExtractSh.load("glow_extract.fs", GL_FRAGMENT_SHADER )) {
-			glowExtractSh.installShader( handle, GL_FRAGMENT_SHADER ); 
-			Shader::compile( handle );
-			sHandles.push_back( handle );
-		}
-		cerr << "No of handles: " << sHandles.size() << endl;
-		Shader::installProgram(sHandles, g_glowExtractProgram); 
-		
 		// Load color shaders
 		sHandles.clear();
 		Shader colorSh;
@@ -309,6 +291,67 @@ namespace CSI4130 {
 		}
 	}
 	
+	void drawScene() {
+		glColor3f(0.8,0.1,0.3);
+		
+		grid.draw();
+		glUseProgram(g_lightProgram);
+		player1.draw();
+		player2.draw();
+		
+		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+		glDrawBuffer(GL_COLOR_ATTACHMENT0_EXT);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glPushAttrib(GL_VIEWPORT_BIT);
+		glViewport(0,0,400, 400);
+		
+		player1.draw();
+		player2.draw();
+		
+		glPopAttrib();
+		
+		glDrawBuffer(GL_COLOR_ATTACHMENT1_EXT);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glPushAttrib(GL_VIEWPORT_BIT);
+		glViewport(0,0,400, 400);
+		
+		glEnable( GL_TEXTURE_2D );
+		glUseProgram(g_glowHorizontalProgram);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, img);
+		glBegin(GL_QUADS);
+		glTexCoord2d(-1.0,0.0); glVertex2d(-1.0,-1.0);
+		glTexCoord2d(1.0,0.0); glVertex2d(1.0,-1.0);
+		glTexCoord2d(1.0,1.0); glVertex2d(1.0,1.0);
+		glTexCoord2d(0.0,1.0); glVertex2d(-1.0,1.0);
+		glEnd();
+		glPopMatrix();
+		glDisable( GL_TEXTURE_2D );
+		glDisable( GL_BLEND );
+		
+		
+		glPopAttrib();
+		
+		glBindFramebufferEXT(GL_FRAMEBUFFER, 0);
+		
+		glEnable( GL_TEXTURE_2D );
+		glBlendFunc(GL_ONE, GL_ONE);
+		glEnable(GL_BLEND);
+		glUseProgram(g_glowVerticalProgram);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, img2);
+		glBegin(GL_QUADS);
+		glTexCoord2d(-1.0,0.0); glVertex2d(-1.0,-1.0);
+		glTexCoord2d(1.0,0.0); glVertex2d(1.0,-1.0);
+		glTexCoord2d(1.0,1.0); glVertex2d(1.0,1.0);
+		glTexCoord2d(0.0,1.0); glVertex2d(-1.0,1.0);
+		glEnd();
+		glPopMatrix();
+		glDisable( GL_TEXTURE_2D );
+		glDisable( GL_BLEND );
+		glUseProgram(0);
+	}
+	
 	void display(void)
 	{
 		glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
@@ -325,92 +368,22 @@ namespace CSI4130 {
 						sin(g_lightAngle)*g_winSize.d_width, 
 						static_cast<GLfloat>( !g_light.d_pointLight ), 
 						static_cast<GLfloat>( g_light.d_pointLight ))); 
-		//glRotated(rotationY, 0, 0, 1);
-		//glRotated(rotationX, 0, 1, 0);
-		
-		// move camera
-		//gluLookAt( player1.d_position.x() -player1.d_direction.x() * 5,4, player1.d_position.z() -player1.d_direction.y() * 5, 
-		//		  player1.d_position.x() + player1.d_direction.x(), 1, player1.d_position.z() + player1.d_direction.y(), 0, 1, 0.0f);
-		//glPushMatrix();
-		//glTranslatef(-grid.getWidth() * 0.5f, -14.0f, -grid.getDepth() * 0.5f);
 
 
-		glColor3f(0.8,0.1,0.3);
-		
 		glMatrixMode(GL_PROJECTION);
 		glViewport( 0, winHeight/2, winWidth, winHeight/2);
 		glLoadIdentity();		
 		gluPerspective(  60.0,
-									 (float)winWidth/(winHeight/2),
-									 0.1,
-									 500.0);
+					   (float)winWidth/(winHeight/2),
+					   0.1,
+					   500.0);
+		
 		gluLookAt( player1.d_cameraPos.x(), 1, player1.d_cameraPos.y(), 
-							player1.d_cameraEye.x(), player1.d_cameraEye.y(), player1.d_cameraEye.z(),
-							0, 1, 0.0f);
-		grid.draw();
-		glUseProgram(g_lightProgram);
-		player1.draw();
-		player2.draw();
+				  player1.d_cameraEye.x(), player1.d_cameraEye.y(), player1.d_cameraEye.z(),
+				  0, 1, 0.0f);
 		
-		//glUseProgram(g_colorProgram);
-		
-		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-		glDrawBuffer(GL_COLOR_ATTACHMENT0_EXT);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		glPushAttrib(GL_VIEWPORT_BIT);
-		glViewport(0,0,400, 400);
-		
-		//glutSolidTeapot(5.0);
-		
-		player1.draw();
-		player2.draw();
-		
-		glPopAttrib();
-		
-		glDrawBuffer(GL_COLOR_ATTACHMENT1_EXT);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		glPushAttrib(GL_VIEWPORT_BIT);
-		glViewport(0,0,400, 400);
-		
-		glEnable( GL_TEXTURE_2D );
-		//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); // the default anyway
-		//glEnable(GL_BLEND);
-		glUseProgram(g_glowHorizontalProgram);
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, img);
-		glBegin(GL_QUADS);
-		glTexCoord2d(-1.0,0.0); glVertex2d(-1.0,-1.0);
-		glTexCoord2d(1.0,0.0); glVertex2d(1.0,-1.0);
-		glTexCoord2d(1.0,1.0); glVertex2d(1.0,1.0);
-		glTexCoord2d(0.0,1.0); glVertex2d(-1.0,1.0);
-		glEnd();
-		glPopMatrix();
-		glDisable( GL_TEXTURE_2D );
-		glDisable( GL_BLEND );
-		
-		
-		glPopAttrib();
-		
-		glBindFramebufferEXT(GL_FRAMEBUFFER, 0);
-		
-		glEnable( GL_TEXTURE_2D );
-		glBlendFunc(GL_ONE, GL_ONE);
-		glEnable(GL_BLEND);
-		glUseProgram(g_glowVerticalProgram);
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, img2);
-		glBegin(GL_QUADS);
-		glTexCoord2d(-1.0,0.0); glVertex2d(-1.0,-1.0);
-		glTexCoord2d(1.0,0.0); glVertex2d(1.0,-1.0);
-		glTexCoord2d(1.0,1.0); glVertex2d(1.0,1.0);
-		glTexCoord2d(0.0,1.0); glVertex2d(-1.0,1.0);
-		glEnd();
-		glPopMatrix();
-		glDisable( GL_TEXTURE_2D );
-		glDisable( GL_BLEND );
-		// restore matrix state
-		glUseProgram(0);
-		
+		drawScene();
+				
 		glViewport( 0, 0, winWidth, winHeight/2);
 		glLoadIdentity();		
 		gluPerspective(  60.0,
@@ -420,69 +393,8 @@ namespace CSI4130 {
 		gluLookAt( player2.d_cameraPos.x(), 1, player2.d_cameraPos.y(), 
 							player2.d_cameraEye.x(), player2.d_cameraEye.y(), player2.d_cameraEye.z(),
 							0, 1, 0.0f);
-		grid.draw();
-		glUseProgram(g_lightProgram);
-		player1.draw();
-		player2.draw();
 		
-		//glUseProgram(g_colorProgram);
-		
-		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-		glDrawBuffer(GL_COLOR_ATTACHMENT0_EXT);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		glPushAttrib(GL_VIEWPORT_BIT);
-		glViewport(0,0,400, 400);
-	
-		//glutSolidTeapot(5.0);
-		
-		player1.draw();
-		player2.draw();
-
-		glPopAttrib();
-		
-		glDrawBuffer(GL_COLOR_ATTACHMENT1_EXT);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		glPushAttrib(GL_VIEWPORT_BIT);
-		glViewport(0,0,400, 400);
-		
-		glEnable( GL_TEXTURE_2D );
-		//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); // the default anyway
-		//glEnable(GL_BLEND);
-		glUseProgram(g_glowHorizontalProgram);
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, img);
-		glBegin(GL_QUADS);
-		glTexCoord2d(-1.0,0.0); glVertex2d(-1.0,-1.0);
-		glTexCoord2d(1.0,0.0); glVertex2d(1.0,-1.0);
-		glTexCoord2d(1.0,1.0); glVertex2d(1.0,1.0);
-		glTexCoord2d(0.0,1.0); glVertex2d(-1.0,1.0);
-		glEnd();
-		glPopMatrix();
-		glDisable( GL_TEXTURE_2D );
-		glDisable( GL_BLEND );
-		
-		
-		glPopAttrib();
-		
-		glBindFramebufferEXT(GL_FRAMEBUFFER, 0);
-		
-		glEnable( GL_TEXTURE_2D );
-		glBlendFunc(GL_ONE, GL_ONE);
-		glEnable(GL_BLEND);
-		glUseProgram(g_glowVerticalProgram);
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, img2);
-		glBegin(GL_QUADS);
-		glTexCoord2d(-1.0,0.0); glVertex2d(-1.0,-1.0);
-		glTexCoord2d(1.0,0.0); glVertex2d(1.0,-1.0);
-		glTexCoord2d(1.0,1.0); glVertex2d(1.0,1.0);
-		glTexCoord2d(0.0,1.0); glVertex2d(-1.0,1.0);
-		glEnd();
-		glPopMatrix();
-		glDisable( GL_TEXTURE_2D );
-		glDisable( GL_BLEND );
-		// restore matrix state
-		glUseProgram(0);
+		drawScene();
 		glutSwapBuffers();
 		
 	}

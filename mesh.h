@@ -11,6 +11,7 @@
 #include "OpenGL/OpenGl.h"
 #include "vec.h"
 #include "math.h"
+#include "Material.h"
 
 using namespace std;
 using namespace CSI4130;
@@ -18,8 +19,10 @@ using namespace CSI4130;
 class Mesh {
 public:
 	GLuint d_vbo;
+	GLuint d_normalVBO;
 	GLuint d_numVerts;
 	GLuint d_numTris;
+	Material d_material;
 	
 	vec3f d_dimensions;
 	

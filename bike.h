@@ -27,7 +27,6 @@ public:
 
 	GLfloat d_partial;
 	GLfloat d_angle;
-	GLfloat d_nextAngle;
 	
 	vec2f d_cameraPos;
 	vec3f d_cameraEye;
@@ -47,6 +46,7 @@ public:
 	void draw();
 	void update(GLfloat timestep);
 	void reset();
+	void reorient();
 	void updateCamera();
 	bool outOfBounds(GLfloat _x, GLfloat _z);
 	void turnLeft();
